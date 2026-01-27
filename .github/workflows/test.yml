@@ -1,0 +1,31 @@
+name: Mini GitHub Actions Test
+
+on:
+  workflow_dispatch:        # allows manual run
+  schedule:
+    - cron: '*/10 * * * *'  # every 10 minutes (testing only)
+
+jobs:
+  run-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run script
+        run: python test_report.py
+
+      - name: Upload Excel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: test_report.xlsx

@@ -22,8 +22,7 @@ EMPTY_COLUMNS = ['Notes', 'Status', 'Follow_Up_Date', 'Assigned_To']
 # SQL Query
 SQL_QUERY = """
     SELECT *
-    FROM VW_CLIENT_CAREGIVER_RELATIONSHIP
-    ORDER BY MONTH_YEAR DESC
+    from DW_PROD.INTEGRATION.FACT_VISIT_MERGED limit 5
 """
 
 # -----------------------------

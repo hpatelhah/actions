@@ -4,48 +4,41 @@ from datetime import datetime
 import snowflake.connector
 import pandas as pd
 
-# -----------------------------
 # Logging Setup
-# -----------------------------
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 
-# -----------------------------
 # Configuration
-# -----------------------------
 OUTPUT_FILE = f"snowflake_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
 EMPTY_COLUMNS = ['Notes', 'Status', 'Follow_Up_Date', 'Assigned_To']
 
-# SQL Query
+# SQL Query with FULL table path
 SQL_QUERY = """
-    SELECT *
-    from DW_PROD.INTEGRATION.FACT_VISIT_MERGED limit 5
+    SELECT * 
+    FROM DW_PROD.INTEGRATION.FACT_VISIT_MERGED 
+    LIMIT 5
 """
 
-# -----------------------------
-# 1. Connect to Snowflake
-# -----------------------------
+# Connect to Snowflake (NO database/schema needed)
 def connect_to_snowflake():
-    """Create Snowflake connection from environment variables"""
+    """Create Snowflake connection"""
     try:
         logger.info("=" * 60)
         logger.info("🔵 Connecting to Snowflake...")
         logger.info(f"   Account: {os.getenv('SNOWFLAKE_ACCOUNT')}")
         logger.info(f"   User: {os.getenv('SNOWFLAKE_USER')}")
-        logger.info(f"   Database: {os.getenv('SNOWFLAKE_DATABASE')}")
-        logger.info(f"   Schema: {os.getenv('SNOWFLAKE_SCHEMA')}")
+        logger.info(f"   Warehouse: {os.getenv('SNOWFLAKE_WAREHOUSE')}")
         
         conn = snowflake.connector.connect(
             user=os.getenv('SNOWFLAKE_USER'),
             password=os.getenv('SNOWFLAKE_PASSWORD'),
             account=os.getenv('SNOWFLAKE_ACCOUNT'),
             warehouse=os.getenv('SNOWFLAKE_WAREHOUSE'),
-            database=os.getenv('SNOWFLAKE_DATABASE'),
-            schema=os.getenv('SNOWFLAKE_SCHEMA'),
             role=os.getenv('SNOWFLAKE_ROLE') if os.getenv('SNOWFLAKE_ROLE') else None
+            # NOTE: No database or schema specified - using fully qualified names in queries
         )
         
         logger.info("✅ Connected successfully!")
@@ -55,15 +48,13 @@ def connect_to_snowflake():
         logger.error(f"❌ Connection failed: {str(e)}")
         raise
 
-# -----------------------------
-# 2. Execute Query
-# -----------------------------
+# Execute Query
 def execute_query(conn, query):
     """Run SQL query and return DataFrame"""
     try:
         logger.info("=" * 60)
         logger.info("🔵 Executing SQL query...")
-        logger.info(f"   Query preview: {query[:80]}...")
+        logger.info(f"   Query: {query.strip()}")
         
         cursor = conn.cursor()
         cursor.execute(query)
@@ -83,7 +74,7 @@ def execute_query(conn, query):
         logger.info("✅ Query completed successfully!")
         logger.info(f"   📊 Rows: {len(df):,}")
         logger.info(f"   📋 Columns: {len(df.columns)}")
-        logger.info(f"   📝 Column names: {', '.join(df.columns[:5])}{'...' if len(df.columns) > 5 else ''}")
+        logger.info(f"   📝 Columns: {', '.join(df.columns[:5])}{'...' if len(df.columns) > 5 else ''}")
         
         return df
         
@@ -91,38 +82,27 @@ def execute_query(conn, query):
         logger.error(f"❌ Query execution failed: {str(e)}")
         raise
 
-# -----------------------------
-# 3. Create Excel File
-# -----------------------------
+# Create Excel File
 def create_excel(df, filename=OUTPUT_FILE):
     """Save DataFrame to Excel with additional empty columns"""
     try:
         logger.info("=" * 60)
         logger.info("🔵 Creating Excel file...")
         
-        # Show original structure
-        logger.info(f"   Original columns: {len(df.columns)}")
-        
-        # Add empty columns
-        logger.info(f"   Adding {len(EMPTY_COLUMNS)} empty columns:")
+        logger.info(f"   Adding {len(EMPTY_COLUMNS)} empty columns: {', '.join(EMPTY_COLUMNS)}")
         for col in EMPTY_COLUMNS:
-            logger.info(f"      - {col}")
             df[col] = ''
         
-        logger.info(f"   Final columns: {len(df.columns)}")
-        
-        # Save to Excel
         logger.info(f"   Writing to: {filename}")
         df.to_excel(filename, index=False, engine='openpyxl')
         
-        # File info
         file_size = os.path.getsize(filename) / 1024
         
         logger.info("✅ Excel file created successfully!")
         logger.info(f"   📁 Filename: {filename}")
         logger.info(f"   💾 Size: {file_size:.2f} KB")
         logger.info(f"   📊 Rows: {len(df):,}")
-        logger.info(f"   📋 Columns: {len(df.columns)}")
+        logger.info(f"   📋 Total columns: {len(df.columns)}")
         
         return filename
         
@@ -130,9 +110,7 @@ def create_excel(df, filename=OUTPUT_FILE):
         logger.error(f"❌ Excel creation failed: {str(e)}")
         raise
 
-# -----------------------------
-# MAIN FUNCTION
-# -----------------------------
+# Main Function
 def main():
     """Execute the complete workflow"""
     conn = None

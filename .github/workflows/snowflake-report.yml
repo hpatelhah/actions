@@ -1,32 +1,26 @@
-name: Snowflake Report Generator
+name: Check Snowflake Access
 
 on:
-  # Manual trigger - you can run this anytime
   workflow_dispatch:
-  
-  # Scheduled - runs every Monday at 9 AM UTC
-  schedule:
-    - cron: '0 9 * * 1'
 
 jobs:
-  generate-report:
+  check-access:
     runs-on: ubuntu-latest
     
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: 🐍 Set up Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       
-      - name: 📦 Install dependencies
+      - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install snowflake-connector-python
       
-      - name: ⚡ Run Snowflake report
+      - name: Check Snowflake access
         env:
           SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
           SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
@@ -36,21 +30,62 @@ jobs:
           SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
           SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
         run: |
-          python snowflake_report.py
+          python check_snowflake_access.py
+
+
+# name: Snowflake Report Generator
+
+# on:
+#   # Manual trigger - you can run this anytime
+#   workflow_dispatch:
+  
+#   # Scheduled - runs every Monday at 9 AM UTC
+#   schedule:
+#     - cron: '0 9 * * 1'
+
+# jobs:
+#   generate-report:
+#     runs-on: ubuntu-latest
+    
+#     steps:
+#       - name: 📥 Checkout code
+#         uses: actions/checkout@v4
       
-      - name: 📤 Upload report
-        uses: actions/upload-artifact@v4
-        with:
-          name: snowflake-report-${{ github.run_number }}
-          path: snowflake_report_*.xlsx
-          retention-days: 30
+#       - name: 🐍 Set up Python
+#         uses: actions/setup-python@v5
+#         with:
+#           python-version: '3.11'
       
-      - name: 📊 Summary
-        run: |
-          echo "### ✅ Report Generated Successfully" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Run Number:** ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Date:** $(date -u)" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "📥 Download the Excel file from the **Artifacts** section above." >> $GITHUB_STEP_SUMMARY
+#       - name: 📦 Install dependencies
+#         run: |
+#           python -m pip install --upgrade pip
+#           pip install -r requirements.txt
+      
+#       - name: ⚡ Run Snowflake report
+#         env:
+#           SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+#           SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+#           SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+#           SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+#           SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+#           SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
+#           SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+#         run: |
+#           python snowflake_report.py
+      
+#       - name: 📤 Upload report
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: snowflake-report-${{ github.run_number }}
+#           path: snowflake_report_*.xlsx
+#           retention-days: 30
+      
+#       - name: 📊 Summary
+#         run: |
+#           echo "### ✅ Report Generated Successfully" >> $GITHUB_STEP_SUMMARY
+#           echo "" >> $GITHUB_STEP_SUMMARY
+#           echo "**Run Number:** ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+#           echo "**Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+#           echo "**Date:** $(date -u)" >> $GITHUB_STEP_SUMMARY
+#           echo "" >> $GITHUB_STEP_SUMMARY
+#           echo "📥 Download the Excel file from the **Artifacts** section above." >> $GITHUB_STEP_SUMMARY
